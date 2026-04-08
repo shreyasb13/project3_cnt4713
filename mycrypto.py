@@ -33,8 +33,8 @@ def server():
 
     # Part 2 of Rubric - Tunnel
     print("Creating RSA keypair")
-    serverKey = RSA.generate(2048)
-    serverPubKey = serverKey.publickey()
+    serverKey = RSA.generate(2048) # Creates an RSA server key pair
+    serverPubKey = serverKey.publickey() # Extracts public key to send to client
     print("RSA keypair created")
 
     # Part 1 of Rubric - Connect
@@ -54,10 +54,10 @@ def server():
 
     # Part 2 of Rubric - Tunnel
     print("Tunnel requested. Sending public key")
-    clientKeyData = receiveData(dataSocket)  # Receives tunnel command
-    clientPubKey = RSA.importKey(clientKeyData)
-    serverKeyData = serverPubKey.exportKey().decode("utf-8")
-    dataSocket.sendall(serverKeyData.encode("utf-8"))
+    clientKeyData = receiveData(dataSocket) # Receives client's public key
+    clientPubKey = RSA.importKey(clientKeyData) # Converts key into an RSA key object
+    serverKeyData = serverPubKey.exportKey().decode("utf-8") # Decodes server's public key
+    dataSocket.sendall(serverKeyData.encode("utf-8")) # Sends server's public key to client
 
     # Part 3 of Rubric - Post
     print("Post requested.")
@@ -81,8 +81,8 @@ def client():
 
     # Part 2 of Rubric - Tunnel
     print("Creating RSA keypair")
-    clientKey = RSA.generate(2048)
-    clientPubKey = clientKey.publickey()
+    clientKey = RSA.generate(2048) # Creates an RSA client key pair
+    clientPubKey = clientKey.publickey() # Extracts public key to send to server
     print("RSA keypair created")
 
     # Part 1 of Rubric - Connect
@@ -97,9 +97,9 @@ def client():
 
     # Part 2 of Rubric - Tunnel
     print("Requesting tunnel")
-    clientKeyData = clientPubKey.exportKey().decode("utf-8")
-    serverKeyData = sendCommand(clientSocket2, clientKeyData)
-    serverPubKey = RSA.importKey(serverKeyData)
+    clientKeyData = clientPubKey.exportKey().decode("utf-8") # Receives server's public key
+    serverKeyData = sendCommand(clientSocket2, clientKeyData) # Sends key and waits for server's key
+    serverPubKey = RSA.importKey(serverKeyData) # Stores key for post command
     print("Server public key received")
     print("Tunnel established")
 
@@ -108,13 +108,13 @@ def client():
     print("Encrypting message:", message)
     cipher = PKCS1_OAEP.new(serverPubKey) # Encrypt message using server's public key
     encrypted_msg = cipher.encrypt(message.encode("utf-8"))
-    encrypted_msg_str = base64.b64encode(encrypted_msg).decode("utf-8") # Will encode messafe to base64 string to send
+    encrypted_msg_str = base64.b64encode(encrypted_msg).decode("utf-8") # Will encode message to base64 string to send
     print("Sending encrypted message:", encrypted_msg_str)
-    clientSocket2.sendall(encrypted_msg_str.encode("utf-8")) # Send message to server
+    clientSocket2.sendall(encrypted_msg_str.encode("utf-8")) # Sends message to server
     encrypted_hash_str = receiveData(clientSocket2) # Receives encrypted hash 
     print("Received hash")
     encrypted_hash = base64.b64decode(encrypted_hash_str)
-    cipher_client = PKCS1_OAEP.new(clientKey) # Deccrypts the hash using the client's private key
+    cipher_client = PKCS1_OAEP.new(clientKey) # Decrypts the hash using the client's private key
     server_hash = cipher_client.decrypt(encrypted_hash).decode("utf-8")
     print("Computing hash")
     local_hash = hashlib.sha256(message.encode("utf-8")).hexdigest()
