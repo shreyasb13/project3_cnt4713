@@ -4,9 +4,13 @@
 # Shreya Sureshbabu Banumathi PID: 6472712
 
 # Import socket module
+from email.mime import message
 from socket import *
 # Import RSA Encryption and Decryption
 from Crypto.PublicKey import RSA
+from Crypto.Cipher import PKCS1_OAEP 
+import hashlib
+import base64
 import sys
 
 # Usage: python mycrypto.py server
@@ -56,6 +60,20 @@ def server():
     dataSocket.sendall(serverKeyData.encode("utf-8"))
 
     # Part 3 of Rubric - Post
+    print("Post requested.")
+    encrypted_msg = receiveData(dataSocket)
+    print("Received encrypted message:", encrypted_msg)
+    encrypted_bytes = base64.b64decode(encrypted_msg) # Decodes base64 string to bytes
+    cipher = PKCS1_OAEP.new(serverKey) # Decrypts message using the server's private key
+    decrypted_msg = cipher.decrypt(encrypted_bytes).decode("utf-8")
+    print("Decrypted message:", decrypted_msg)
+    print("Computing hash")
+    hash_value = hashlib.sha256(decrypted_msg.encode("utf-8")).hexdigest() # Computes the hash of decrypted message
+    cipher_client = PKCS1_OAEP.new(clientPubKey) # Will encypt the hash using client's public key
+    encrypted_hash = cipher_client.encrypt(hash_value.encode("utf-8"))
+    encrypted_hash_str = base64.b64encode(encrypted_hash).decode("utf-8")
+    print("Responding with hash:", hash_value)
+    dataSocket.sendall(encrypted_hash_str.encode("utf-8"))
 
 
 def client():
@@ -86,6 +104,26 @@ def client():
     print("Tunnel established")
 
     # Part 3 of Rubric - Post
+    message = "Hello"
+    print("Encrypting message:", message)
+    cipher = PKCS1_OAEP.new(serverPubKey) # Encrypt message using server's public key
+    encrypted_msg = cipher.encrypt(message.encode("utf-8"))
+    encrypted_msg_str = base64.b64encode(encrypted_msg).decode("utf-8") # Will encode messafe to base64 string to send
+    print("Sending encrypted message:", encrypted_msg_str)
+    clientSocket2.sendall(encrypted_msg_str.encode("utf-8")) # Send message to server
+    encrypted_hash_str = receiveData(clientSocket2) # Receives encrypted hash 
+    print("Received hash")
+    encrypted_hash = base64.b64decode(encrypted_hash_str)
+    cipher_client = PKCS1_OAEP.new(clientKey) # Deccrypts the hash using the client's private key
+    server_hash = cipher_client.decrypt(encrypted_hash).decode("utf-8")
+    print("Computing hash")
+    local_hash = hashlib.sha256(message.encode("utf-8")).hexdigest()
+
+    # Compares the hash received from server with hash computed locally to check if message was compromised
+    if local_hash == server_hash:
+        print("Secure")
+    else:
+        print("Compromised")
 
 def main():
     if sys.argv[1] == "server":
@@ -95,11 +133,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-    
-
-
-
-    
-
