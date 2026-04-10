@@ -1,0 +1,5 @@
+1. How could the “secure” server and client framework above be compromised
+This server-client messaging framework may have proper message encryption, however, it does not secure itself in any other way. This leaves room for other kinds of vulnerabilities, such as Man-In-The-Middle attacks intercepting the public keys, then IP spoofing all in effort to impersonate and send messages as the user or server.
+
+2. How could you improve the framework?
+The framework can have some kind of identification verification in order to avoid impersonation. This can be done using the already existing RSA key pairs, by having the server (or client) include a message encrypted with their respective private key. The server (or client) can then decrypt the message using the public key, verifying the identity of the sender. 
